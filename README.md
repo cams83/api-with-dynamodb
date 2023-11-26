@@ -1,7 +1,8 @@
 # Example of API using DynamoDB
 
-### Step by step to run API using DynamoDB
+## Step-by-step Guide to Run API using DynamoDB
 
+### 1. Create DynamoDB Table
 ```sh
 aws dynamodb create-table \
     --table-name 'happy-projects' \
@@ -16,7 +17,9 @@ aws dynamodb create-table \
     --table-class STANDARD
 
 aws dynamodb wait table-exists --table-name 'happy-projects'
-    
+```
+### 2. Create Global Secondary Index - Project-Employee-Index
+```sh    
 aws dynamodb update-table \
     --table-name 'happy-projects' \
     --attribute-definitions \
@@ -40,7 +43,9 @@ while true; do
         break
     fi
 done
-    
+```
+### 3. Create Another Global Secondary Index - Filter-by-name
+```sh     
 aws dynamodb update-table \
     --table-name 'happy-projects' \
     --attribute-definitions \
@@ -65,10 +70,8 @@ while true; do
     fi
 done
 ```
-
-
-Download project and run project
-
+### 4. Download and Run the Project
+> Note: Remember to replace placeholder values like `$YOUR_DIR` with your actual values. This guide sets up the DynamoDB table, creates global secondary indexes, and demonstrates API operations.
 ```sh
 cd $YOUR_DIR
 git clone https://github.com/cams83/api-with-dynamodb.git
@@ -76,7 +79,10 @@ git clone https://github.com/cams83/api-with-dynamodb.git
 cd $YOUR_DIR/api-with-dynamodb
 yarn install
 yarn start
-
+```
+### 5. Perform API Operations
+Use the following commands to interact with the API:
+```sh
 org_id1=$(curl --request POST --url http://localhost:3000/api/v1/organizations --header 'Content-Type: application/json' --data '{"name": "Happy Inc", "tier": "free-tier"}' | jq -r '.org_id')
 org_id2=$(curl --request POST --url http://localhost:3000/api/v1/organizations --header 'Content-Type: application/json' --data '{"name": "ABC Inc", "tier": "professional"}' | jq -r '.org_id')
 
