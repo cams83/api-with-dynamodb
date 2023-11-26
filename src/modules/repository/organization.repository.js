@@ -2,12 +2,16 @@ const db = require(`../../helpers/database`);
 const {v4: uuidv4} = require('uuid');
 
 class OrganizationRepository {
+    constructor() {
+        this.tableName = 'happy-projects';
+    }
+
     async findByID(organizationId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `#METADATA#${organizationId}`
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getOrganizationSK(organizationId)
             }
         };
 
@@ -18,10 +22,10 @@ class OrganizationRepository {
         const org_id = uuidv4();
 
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Item: {
-                PK: `ORG#${org_id}`,
-                SK: `#METADATA#${org_id}`,
+                PK: this.getOrganizationPK(org_id),
+                SK: this.getOrganizationSK(org_id),
                 name: data.name,
                 tier: data.tier,
                 org_id
@@ -53,10 +57,10 @@ class OrganizationRepository {
         updateExpression = updateExpression.slice(0, -1);
     
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `#METADATA#${organizationId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getOrganizationSK(organizationId),
             },
             UpdateExpression: updateExpression,
             ExpressionAttributeNames: expressionAttributeNames,
@@ -71,14 +75,22 @@ class OrganizationRepository {
 
     async deleteByID(organizationId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `#METADATA#${organizationId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getOrganizationSK(organizationId),
             },
         };
 
         return await db.delete(params).promise();
+    }
+
+    getOrganizationPK(organizationId) {
+        return `ORG#${organizationId}`;
+    }
+
+    getOrganizationSK(organizationId) {
+        return `#METADATA#${organizationId}`;
     }
 }
 

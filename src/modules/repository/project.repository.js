@@ -2,12 +2,18 @@ const db = require(`../../helpers/database`);
 const {v4: uuidv4} = require('uuid');
 
 class ProjectRepository {
+    constructor() {
+        this.tableName = 'happy-projects';
+        this.projectEmployeeIndex = 'Project-Employee-Index';
+        this.filterByNameIndex = 'Filter-by-name';
+    }
+
     async findByID(organizationId, type, projectId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `PRO#${type}#${projectId}`
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getProjectSK(type, projectId)
             }
         };
 
@@ -16,10 +22,10 @@ class ProjectRepository {
 
     async findAllByOrganizationId(organizationId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             KeyConditionExpression: 'PK = :PK and begins_with(SK, :SK)',
             ExpressionAttributeValues: {
-                ':PK': `ORG#${organizationId}`,
+                ':PK': this.getOrganizationPK(organizationId),
                 ':SK': 'PRO#'
             }
         };
@@ -29,10 +35,10 @@ class ProjectRepository {
 
     async findAllByType(organizationId, type) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             KeyConditionExpression: 'PK = :PK and begins_with(SK, :SK)',
             ExpressionAttributeValues: {
-                ':PK': `ORG#${organizationId}`,
+                ':PK': this.getOrganizationPK(organizationId),
                 ':SK': `PRO#${type}#`
             }
         };
@@ -42,8 +48,8 @@ class ProjectRepository {
 
     async findAllByEmployeeId(organizationId, employeeId) {
         const params = {
-            TableName: process.env.table,
-            IndexName: process.env.projectEmployeeIndex,
+            TableName: this.tableName,
+            IndexName: this.projectEmployeeIndex,
             KeyConditionExpression: 'SK = :SK',
             ExpressionAttributeValues: {
                 ':SK': `ORG#${organizationId}#EMP#${employeeId}`,
@@ -57,11 +63,11 @@ class ProjectRepository {
         const projectId = uuidv4();
 
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Item: {
-                PK: `ORG#${organizationId}`,
-                SK: `PRO#${data.type}#${projectId}`,
-                Data: `PRO#${data.name}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getProjectSK(data.type, projectId),
+                Data: this.getData(data.name),
                 name: data.name,
                 project_id: projectId,
             }
@@ -83,16 +89,16 @@ class ProjectRepository {
             expressionAttributeValues[':name'] = data.name;
             updateExpression += ' #Data = :Data,';
             expressionAttributeNames['#Data'] = 'Data';
-            expressionAttributeValues[':Data'] = `PRO#${data.name}`;
+            expressionAttributeValues[':Data'] = this.getData(data.name);
         }    
     
         updateExpression = updateExpression.slice(0, -1);
     
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `PRO#${type}#${projectId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getProjectSK(type, projectId),
             },
             UpdateExpression: updateExpression,
             ExpressionAttributeNames: expressionAttributeNames,
@@ -107,10 +113,10 @@ class ProjectRepository {
 
     async deleteByID(organizationId, type, projectId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `PRO#${type}#${projectId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getProjectSK(type, projectId),
             },
         };
 
@@ -119,10 +125,10 @@ class ProjectRepository {
 
     async assignEmployee(organizationId, projectId, data) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Item: {
-                PK: `ORG#${organizationId}#PRO#${projectId}`,
-                SK: `ORG#${organizationId}#EMP#${data.employeeId}`,
+                PK: this.getOrganizationAndProjectPK(organizationId, projectId),
+                SK: this.getOrganizationAndEmployeeSK(organizationId, data.employeeId),
                 name: data.employeeName,
                 project: data.projectName,
                 date_of: data.dateOf,
@@ -136,20 +142,40 @@ class ProjectRepository {
 
     async findAllByName(organizationId, name) {
         const params = {
-            TableName: process.env.table,
-            IndexName: process.env.filterByNameIndex,
+            TableName: this.tableName,
+            IndexName: this.filterByNameIndex,
             KeyConditionExpression: '#PK = :PK and begins_with(#SK, :SK)',
             ExpressionAttributeNames: {
                 '#PK': 'PK',
                 '#SK': 'Data',
             },
             ExpressionAttributeValues: {
-              ':PK': `ORG#${organizationId}`,
-              ':SK': `PRO#${name}`
+              ':PK': this.getOrganizationPK(organizationId),
+              ':SK': this.getData(name)
             }
         }
 
         return await db.query(params).promise();
+    }
+
+    getOrganizationPK(organizationId) {
+        return `ORG#${organizationId}`;
+    }
+
+    getProjectSK(type, projectId) {
+        return `PRO#${type}#${projectId}`;
+    }
+
+    getData(name) {
+        return `PRO#${name}`;
+    }
+
+    getOrganizationAndProjectPK(organizationId, projectId) {
+        return `ORG#${organizationId}#PRO#${projectId}`;
+    }
+
+    getOrganizationAndEmployeeSK(organizationId, employeeId) {
+        return `ORG#${organizationId}#EMP#${employeeId}`;
     }
 }
 

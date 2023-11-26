@@ -8,13 +8,7 @@ class ProjectService {
 
         if (!data?.Item) return {};
 
-        const item =  data.Item;
-        const {PK, SK} = item;
-
-        const org_id = PK.split('#')[1];
-        const projectType = SK.split('#')[1];
-
-        return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, type: projectType};
+        return this.getProject(data.Item);
     }
 
     async findAllByOrganizationId(organizationId) {
@@ -22,12 +16,7 @@ class ProjectService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const org_id = PK.split('#')[1];
-            const type = SK.split('#')[1];
-            return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, type};
-        });
+        const items = data.Items.map(item => this.getProject(item));
         return items;     
     }
 
@@ -36,12 +25,7 @@ class ProjectService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const org_id = PK.split('#')[1];
-            const type = SK.split('#')[1];
-            return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, type};
-        });
+        const items = data.Items.map(item => this.getProject(item));
         return items;     
     }
 
@@ -51,14 +35,7 @@ class ProjectService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const projectIds = PK.split('#');
-            const org_id = projectIds[1];
-            const project_id = projectIds[3];
-            const employee_id = SK.split('#')[3];
-            return {...item, PK: undefined, SK: undefined, org_id, employee_id, project_id};
-        });
+        const items = data.Items.map(item => this.getProjectAndEmployee(item));
         return items;
     }
 
@@ -68,12 +45,7 @@ class ProjectService {
             type: data.type
         });
 
-        const {PK, SK} = item;
-
-        const org_id = PK.split('#')[1];
-        const type = SK.split('#')[1];
-
-        return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, type};
+        return this.getProject(item);
     }
 
     async update(organizationId, type, projectId, data) {
@@ -103,14 +75,7 @@ class ProjectService {
             dateOf: new Date().toUTCString(),
         });
 
-        const {PK, SK} = item;
-
-        const projectIds = PK.split('#');
-        const org_id = projectIds[1];
-        const project_id = projectIds[3];
-        const employee_id = SK.split('#')[3];
-
-        return {...item, PK: undefined, SK: undefined, org_id, project_id, employee_id};
+        return this.getProjectAndEmployee(item);
     }
 
     async findAllByName(organizationId, name) {
@@ -118,13 +83,26 @@ class ProjectService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const org_id = PK.split('#')[1];
-            const type = SK.split('#')[1];
-            return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, type};
-        });
+        const items = data.Items.map(item => this.getProject(item));
         return items;     
+    }
+
+    getProject(project) {
+        const {PK, SK} = project;
+
+        const org_id = PK.split('#')[1];
+        const type = SK.split('#')[1];
+
+        return {...project, PK: undefined, SK: undefined, Data: undefined, org_id, type};
+    }
+
+    getProjectAndEmployee(item) {
+        const {PK, SK} = item;
+        const projectIds = PK.split('#');
+        const org_id = projectIds[1];
+        const project_id = projectIds[3];
+        const employee_id = SK.split('#')[3];
+        return {...item, PK: undefined, SK: undefined, org_id, employee_id, project_id};
     }
 
 }

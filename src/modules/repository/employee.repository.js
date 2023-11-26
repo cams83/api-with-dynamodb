@@ -2,13 +2,17 @@ const db = require(`../../helpers/database`);
 const {v4: uuidv4} = require('uuid');
 
 class EmployeeRepository {
+    constructor() {
+        this.tableName = 'happy-projects';
+        this.filterByNameIndex = 'Filter-by-name';
+    }
 
     async findByID(organizationId, employeeId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `EMP#${employeeId}`
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getEmployeeSK(employeeId)
             }
         };
 
@@ -17,10 +21,10 @@ class EmployeeRepository {
 
     async findAllByOrganizationId(organizationId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             KeyConditionExpression: 'PK = :PK and begins_with(SK, :SK)',
             ExpressionAttributeValues: {
-                ':PK': `ORG#${organizationId}`,
+                ':PK': this.getOrganizationPK(organizationId),
                 ':SK': 'EMP#'
             }
         };
@@ -30,10 +34,10 @@ class EmployeeRepository {
 
     async findAllByProjectId(organizationId, projectId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             KeyConditionExpression: 'PK = :PK',
             ExpressionAttributeValues: {
-                ':PK': `ORG#${organizationId}#PRO#${projectId}`,
+                ':PK': `${this.getOrganizationAndProjectPK(organizationId, projectId)}`,
             }
         };
 
@@ -44,11 +48,11 @@ class EmployeeRepository {
         const employeeId = uuidv4();
 
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Item: {
-                PK: `ORG#${organizationId}`,
-                SK: `EMP#${employeeId}`,
-                Data: `EMP#${data.name}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getEmployeeSK(employeeId),
+                Data: this.getData(data.name),
                 name: data.name,
                 email: data.email
             }
@@ -70,7 +74,7 @@ class EmployeeRepository {
             expressionAttributeValues[':name'] = data.name;
             updateExpression += ' #Data = :Data,';
             expressionAttributeNames['#Data'] = 'Data';
-            expressionAttributeValues[':Data'] = `EMP#${data.name}`;
+            expressionAttributeValues[':Data'] = this.getData(data.name);
         }
     
         if (data?.email) {
@@ -82,10 +86,10 @@ class EmployeeRepository {
         updateExpression = updateExpression.slice(0, -1);
     
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `EMP#${employeeId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getEmployeeSK(employeeId),
             },
             UpdateExpression: updateExpression,
             ExpressionAttributeNames: expressionAttributeNames,
@@ -100,10 +104,10 @@ class EmployeeRepository {
 
     async deleteByID(organizationId, employeeId) {
         const params = {
-            TableName: process.env.table,
+            TableName: this.tableName,
             Key: {
-                PK: `ORG#${organizationId}`,
-                SK: `EMP#${employeeId}`,
+                PK: this.getOrganizationPK(organizationId),
+                SK: this.getEmployeeSK(employeeId),
             },
         };
 
@@ -112,20 +116,36 @@ class EmployeeRepository {
 
     async findAllByName(organizationId, name) {
         const params = {
-            TableName: process.env.table,
-            IndexName: process.env.filterByNameIndex,
+            TableName: this.tableName,
+            IndexName: this.filterByNameIndex,
             KeyConditionExpression: '#PK = :PK and begins_with(#SK, :SK)',
             ExpressionAttributeNames: {
                 '#PK': 'PK',
                 '#SK': 'Data',
             },
             ExpressionAttributeValues: {
-              ':PK': `ORG#${organizationId}`,
-              ':SK': `EMP#${name}`
+              ':PK': this.getOrganizationPK(organizationId),
+              ':SK': this.getData(name)
             }
         }
 
         return await db.query(params).promise();
+    }
+
+    getOrganizationPK(organizationId) {
+        return `ORG#${organizationId}`;
+    }
+
+    getEmployeeSK(employeeId) {
+        return `EMP#${employeeId}`;
+    }
+
+    getData(name) {
+        return this.getEmployeeSK(name);
+    }
+
+    getOrganizationAndProjectPK(organizationId, projectId) {
+        return `ORG#${organizationId}#PRO#${projectId}`;
     }
 }
 

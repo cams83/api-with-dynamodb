@@ -7,13 +7,7 @@ class EmployeeService {
 
         if (!data?.Item) return {};
 
-        const item =  data.Item;
-        const {PK, SK} = item;
-
-        const org_id = PK.split('#')[1];
-        const employee_id = SK.split('#')[1];
-
-        return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, employee_id};
+        return this.getEmployee(data.Item);
     }
 
     async findAllByOrganizationId(organizationId) {
@@ -21,12 +15,7 @@ class EmployeeService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const org_id = PK.split('#')[1];
-            const employee_id = SK.split('#')[1];
-            return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, employee_id};
-        });
+        const items = data.Items.map(item => this.getEmployee(item));
         return items;        
     }
 
@@ -35,14 +24,7 @@ class EmployeeService {
 
         if(!data?.Items) return [];
 
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const projectIds = PK.split('#');
-            const org_id = projectIds[1];
-            const project_id = projectIds[3];
-            const employee_id = SK.split('#')[3];
-            return {...item, PK: undefined, SK: undefined, org_id, project_id, employee_id};
-        });
+        const items = data.Items.map(item => this.getProjectAndEmployee(item));
 
         return items;
     }
@@ -53,12 +35,7 @@ class EmployeeService {
             email: data.email
         });
 
-        const {PK, SK} = item;
-
-        const org_id = PK.split('#')[1];
-        const employee_id = SK.split('#')[1];
-
-        return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, employee_id};
+        return this.getEmployee(item);
     }
 
     async update(organizationId, employeeId, data) {
@@ -78,15 +55,28 @@ class EmployeeService {
 
         if(!data?.Items) return [];
         
-        const items = data.Items.map(item => {
-            const {PK, SK} = item;
-            const org_id = PK.split('#')[1];
-            const employee_id = SK.split('#')[1];
-            return {...item, PK: undefined, SK: undefined, Data: undefined, org_id, employee_id};
-        });
+        const items = data.Items.map(item => this.getEmployee(item));
         return items;
     }
 
+    getEmployee(employee) {
+        const {PK, SK} = employee;
+
+        const org_id = PK.split('#')[1];
+        const employee_id = SK.split('#')[1];
+
+        return {...employee, PK: undefined, SK: undefined, Data: undefined, org_id, employee_id};
+    }
+
+    getProjectAndEmployee(item) {
+        const {PK, SK} = item;
+        const projectIds = PK.split('#');
+        const org_id = projectIds[1];
+        const project_id = projectIds[3];
+        const employee_id = SK.split('#')[3];
+        return {...item, PK: undefined, SK: undefined, org_id, employee_id, project_id};
+    }
+    
 }
 
 module.exports = new EmployeeService()

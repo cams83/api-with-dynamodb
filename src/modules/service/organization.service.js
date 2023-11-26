@@ -7,7 +7,7 @@ class OrganizationService {
 
         if (!data?.Item) return {};
         
-        return {...data.Item, PK: undefined, SK: undefined};
+        return this.getOrganization(data.Item);
     }
 
     async create(data) {
@@ -16,7 +16,7 @@ class OrganizationService {
             tier: data.tier,
         });
 
-        return {...item, PK: undefined, SK: undefined};
+        return this.getOrganization(item);
     }
 
     async update(organizationId, data) {
@@ -28,7 +28,12 @@ class OrganizationService {
 
     async deleteByID(organizationId) {
         return await OrganizationRepository.deleteByID(organizationId);
-    }    
+    }
+    
+    getOrganization(organization) {
+        return {...organization, PK: undefined, SK: undefined};
+    }
+
 
 }
 
